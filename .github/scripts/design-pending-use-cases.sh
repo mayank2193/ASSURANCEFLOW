@@ -2,9 +2,17 @@
 # Designs assurance (ACs, scenarios, 1:1 tests) for every use-case the
 # coverage ribbon reports as needing scenarios or having unverified ACs.
 # Follows kane-cli's own `ready_command` hints from `cover gaps`.
+#
+# Honors $MAX_TESTS (optional): caps scenario+test pairs designed per
+# use-case via kane-cli's own `--max` flag. Blank/unset = no ceiling.
 set -uo pipefail
 
 MAX_PASSES=5
+MAX_FLAG=""
+if [ -n "${MAX_TESTS:-}" ]; then
+  MAX_FLAG="--max $MAX_TESTS"
+  echo "design-pending-use-cases: capping each use-case at $MAX_TESTS scenario+test pair(s)"
+fi
 
 for pass in $(seq 1 "$MAX_PASSES"); do
   GAPS=$(kane-cli cover gaps --mode ci --json 2>/dev/null | head -1)
@@ -27,10 +35,10 @@ for uc in d.get("usecases", []):
 
   while IFS= read -r cmd; do
     [ -z "$cmd" ] && continue
-    echo "design-pending-use-cases: running -> $cmd --mode ci"
-    if ! eval "$cmd --mode ci"; then
-      echo "design-pending-use-cases: retrying with --force -> $cmd --mode ci --force"
-      eval "$cmd --mode ci --force" || echo "design-pending-use-cases: WARN - $cmd failed twice, continuing"
+    echo "design-pending-use-cases: running -> $cmd --mode ci $MAX_FLAG"
+    if ! eval "$cmd --mode ci $MAX_FLAG"; then
+      echo "design-pending-use-cases: retrying with --force -> $cmd --mode ci --force $MAX_FLAG"
+      eval "$cmd --mode ci --force $MAX_FLAG" || echo "design-pending-use-cases: WARN - $cmd failed twice, continuing"
     fi
     bash "$(dirname "$0")/approve-derived.sh"
   done <<< "$CMDS"

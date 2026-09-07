@@ -26,6 +26,14 @@ on:
     - cron: "0 3 * * *" # nightly regression (stage 5)
   workflow_dispatch:
     inputs:
+      pdf_path:
+        description: "Path to the PRD PDF to ingest (optional - defaults to the *.pdf already committed at the repo root)"
+        required: false
+        type: string
+      max_tests:
+        description: "Max scenario+test pairs to design per use-case (optional - blank = no ceiling, kane-cli estimates the budget itself)"
+        required: false
+        type: string
       reconcile_pdf:
         description: "Path to an updated PRD PDF to reconcile against (stage 5, optional)"
         required: false
@@ -43,6 +51,8 @@ env:
   KANE_CLI_USER_AGENT: github-actions
   KANE_CLI_USERNAME: ${{ inputs.lt_username || secrets.LT_USERNAME }}
   KANE_CLI_ACCESS_KEY: ${{ inputs.lt_access_key || secrets.LT_ACCESS_KEY }}
+  PDF_PATH: ${{ inputs.pdf_path }}
+  MAX_TESTS: ${{ inputs.max_tests }}
 
 jobs:
   # ---------------------------------------------------------------------
@@ -56,17 +66,28 @@ jobs:
       - uses: actions/checkout@v4
       - uses: ./.github/actions/kane-setup
 
-      - name: Ingest every PDF requirements doc at the repo root
+      - name: Ingest PDF requirements
         run: |
-          shopt -s nullglob
-          pdfs=(*.pdf)
-          if [ ${#pdfs[@]} -eq 0 ]; then
-            echo "::error::no PDF requirements found at repo root"
-            exit 1
+          if [ -n "$PDF_PATH" ]; then
+            if [ ! -f "$PDF_PATH" ]; then
+              echo "::error::pdf_path '$PDF_PATH' does not exist in the checked-out repo"
+              exit 1
+            fi
+            echo "Ingesting explicitly provided PDF: $PDF_PATH"
+            kane-cli context ingest "$PDF_PATH" --mode ci
+          else
+            shopt -s nullglob
+            pdfs=(*.pdf)
+            if [ ${#pdfs[@]} -eq 0 ]; then
+              echo "::error::no pdf_path given and no PDF requirements found at repo root"
+              exit 1
+            fi
+            echo "No pdf_path given - ingesting every PDF committed at the repo root:"
+            printf ' - %s\n' "${pdfs[@]}"
+            for f in "${pdfs[@]}"; do
+              kane-cli context ingest "$f" --mode ci
+            done
           fi
-          for f in "${pdfs[@]}"; do
-            kane-cli context ingest "$f" --mode ci
-          done
 
       - name: Extract use-cases from ingested sources
         run: kane-cli context extract --mode ci
@@ -94,10 +115,25 @@ jobs:
       - uses: actions/checkout@v4
       - uses: ./.github/actions/kane-setup
 
-      - uses: actions/download-artifact@v4
+      # GitHub Actions artifacts from a previous attempt are only visible to
+      # a new attempt if the job that created them is ALSO re-run - re-running
+      # just this job orphans it from job 1's upload. continue-on-error keeps
+      # that recoverable: the .context/ already checked out from git (stage 1
+      # commits its graph) is used as the fallback baseline instead of a hard
+      # failure.
+      - name: Download context graph from stage 1
+        id: download-context
+        continue-on-error: true
+        uses: actions/download-artifact@v4
         with:
           name: context-graph
           path: .context/
+
+      - name: Warn if falling back to the git-committed context graph
+        if: steps.download-context.outcome != 'success'
+        run: |
+          echo "::warning::context-graph artifact unavailable (stage 1 wasn't re-run in this attempt) - falling back to the .context/ already committed to the repo. Re-run stage 1 too if you need this attempt's fresh ingest."
+          test -f .context/store.json || { echo "::error::no .context/ graph available at all - run stage 1 (Ingest from PDF) first"; exit 1; }
 
       - name: Design assurance for every pending use-case
         run: bash .github/scripts/design-pending-use-cases.sh
@@ -125,9 +161,18 @@ jobs:
       - uses: actions/checkout@v4
       - uses: ./.github/actions/kane-setup
 
-      - uses: actions/download-artifact@v4
+      - name: Download design output from stage 2
+        id: download-design
+        continue-on-error: true
+        uses: actions/download-artifact@v4
         with:
           name: design-output
+
+      - name: Warn if falling back to the git-committed test suite
+        if: steps.download-design.outcome != 'success'
+        run: |
+          echo "::warning::design-output artifact unavailable (stage 2 wasn't re-run in this attempt) - falling back to the *_test.md files already committed to the repo."
+          find .testmuai/tests -name '*_test.md' | grep -q . || { echo "::error::no *_test.md files available at all - run stage 2 (Design test cases) first"; exit 1; }
 
       - name: Run all tests (author + replay)
         id: run
@@ -170,6 +215,7 @@ jobs:
       - uses: ./.github/actions/kane-setup
 
       - uses: actions/download-artifact@v4
+        continue-on-error: true
         with:
           name: run-output
 

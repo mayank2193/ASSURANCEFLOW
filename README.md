@@ -83,11 +83,26 @@ Defaults to two repo secrets (Settings → Secrets and variables → Actions) �
 
 A manual run (**Actions → KaneAI Assurance Pipeline → Run workflow**) can override either one for that run only, via the `lt_username` / `lt_access_key` inputs — useful for testing against a different account without touching repo secrets. Leave both blank to fall back to the repo secrets. Both values are explicitly masked in the logs the moment the job starts, whichever source they came from.
 
+### Manual-run inputs
+
+All optional — leave blank for the defaults below:
+
+| Input | Default when blank | Purpose |
+|---|---|---|
+| `pdf_path` | every `*.pdf` at the repo root | Ingest one specific PRD instead of (or in addition to, on a later run) the PDF already committed to the repo |
+| `max_tests` | no ceiling — kane-cli estimates the budget itself | Caps the number of scenario+test pairs `design tests` generates per use-case, via kane-cli's own `--max` flag |
+| `reconcile_pdf` | skipped | Stage 5 only: reconciles the graph against an updated PRD version |
+| `lt_username` / `lt_access_key` | `LT_USERNAME` / `LT_ACCESS_KEY` secrets | Override credentials for this run only |
+
 Triggers:
 - **Push to `main`** touching a PDF, `.testmuai/tests/**`, or the workflow itself → stages 1–4, 6
 - **Pull request** → stages 1–4, 6
 - **Nightly cron** (`0 3 * * *`) → stage 5 (regression) → 6
-- **Manual dispatch** → all stages; optionally pass `reconcile_pdf` to reconcile against an updated PRD, and/or `lt_username` / `lt_access_key` to override credentials for the run
+- **Manual dispatch** → all stages, with the inputs above
+
+### Re-running a single stage
+
+GitHub Actions artifacts from a previous attempt aren't visible to a new attempt unless the job that created them is *also* re-run. If you use **Re-run jobs → Re-run this job** on, say, stage 2 alone, its `download-artifact` step won't find stage 1's upload — the workflow catches this and falls back to whatever `.context/`/`.testmuai/tests/` are already committed to the repo (with a `::warning::` in the log) rather than failing outright. For this attempt to pick up genuinely new ingest/design output, re-run stage 1 (or use **Re-run all jobs**) too.
 
 ## Local usage
 
