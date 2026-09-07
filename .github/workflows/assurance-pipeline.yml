@@ -34,6 +34,18 @@ on:
         description: "Max scenario+test pairs to design per use-case (optional - blank = no ceiling, kane-cli estimates the budget itself)"
         required: false
         type: string
+      test_limit:
+        description: "Max number of tests to run (optional - blank = run every designed test). Stage 3 picks the first N (sorted); stage 5 (Maintain) reruns that EXACT same set rather than re-selecting."
+        required: false
+        type: string
+      project_id:
+        description: "kane-cli/LambdaTest Test Manager project ID (optional - blank = account default, same as a plain kane-cli login)"
+        required: false
+        type: string
+      folder_id:
+        description: "kane-cli/LambdaTest Test Manager folder ID within the project (optional - blank = account default)"
+        required: false
+        type: string
       reconcile_pdf:
         description: "Path to an updated PRD PDF to reconcile against (stage 5, optional)"
         required: false
@@ -53,6 +65,9 @@ env:
   KANE_CLI_ACCESS_KEY: ${{ inputs.lt_access_key || secrets.LT_ACCESS_KEY }}
   PDF_PATH: ${{ inputs.pdf_path }}
   MAX_TESTS: ${{ inputs.max_tests }}
+  TEST_LIMIT: ${{ inputs.test_limit }}
+  PROJECT_ID: ${{ inputs.project_id }}
+  FOLDER_ID: ${{ inputs.folder_id }}
 
 jobs:
   # ---------------------------------------------------------------------
@@ -199,6 +214,7 @@ jobs:
             .context/
             .testmuai/tests/
             run-summary.json
+            selected-tests.txt
             evidence-packs/
           retention-days: 14
 
@@ -274,8 +290,23 @@ jobs:
             --plan
           echo "::notice::reconcile plan staged — review with 'kane-cli maintain reconcile --apply' locally, nothing auto-commits in CI"
 
-      - name: Rerun full regression suite
-        run: bash .github/scripts/run-all-tests.sh regression-summary.json
+      - name: Rerun the exact test set stage 3 planned
+        env:
+          # Reuse stage 3's own selection (from the run-output artifact) so
+          # this regression pass exercises the identical set it authored,
+          # not a fresh/possibly-different selection. Falls back to
+          # TEST_LIMIT (same deterministic first-N-sorted rule) if that
+          # artifact wasn't available - see "Re-running a single stage" in
+          # the README.
+          TEST_LIST_FILE: selected-tests.txt
+        run: |
+          if [ -s "$TEST_LIST_FILE" ]; then
+            echo "Reusing stage 3's planned test set ($(wc -l < "$TEST_LIST_FILE" | tr -d ' ') test(s)):"
+            cat "$TEST_LIST_FILE"
+          else
+            echo "::warning::selected-tests.txt not found from stage 3 - falling back to TEST_LIMIT/full sweep"
+          fi
+          bash .github/scripts/run-all-tests.sh regression-summary.json
 
       - name: Publish regression summary
         if: always()

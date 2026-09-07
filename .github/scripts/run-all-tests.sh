@@ -1,13 +1,42 @@
 #!/usr/bin/env bash
-# Runs (authors on first sight, replays afterwards) every *_test.md under
-# .testmuai/tests, collects a pass/fail summary, and stages every evidence
-# pack it produced into ./evidence-packs/ so the caller can upload it.
+# Runs (authors on first sight, replays afterwards) a set of *_test.md files,
+# collects a pass/fail summary, and stages every evidence pack it produced
+# into ./evidence-packs/ so the caller can upload it.
 #
 # Usage: run-all-tests.sh <summary-json-path>
+#
+# Which tests run is resolved in this order:
+#   1. $TEST_LIST_FILE, if set and the file exists - run exactly the test
+#      paths listed in it, one per line (this is how stage 5 reruns the
+#      identical set stage 3 planned, instead of re-selecting/re-globbing).
+#   2. Otherwise, every *_test.md under .testmuai/tests, sorted, capped to
+#      the first $TEST_LIMIT of them if that's set (blank/unset = no cap).
+#
+# Whichever set is resolved, it's written to ./selected-tests.txt so the
+# caller can upload it and hand it to a later stage via $TEST_LIST_FILE.
 set -uo pipefail
 
 SUMMARY_PATH="${1:-run-summary.json}"
+SELECTED_PATH="selected-tests.txt"
 mkdir -p evidence-packs
+
+if [ -n "${TEST_LIST_FILE:-}" ] && [ -s "$TEST_LIST_FILE" ]; then
+  echo "run-all-tests: using the fixed test list from $TEST_LIST_FILE"
+  cp "$TEST_LIST_FILE" "$SELECTED_PATH"
+else
+  find .testmuai/tests -name '*_test.md' | sort > "$SELECTED_PATH.all"
+  if [ -n "${TEST_LIMIT:-}" ]; then
+    echo "run-all-tests: capping at the first $TEST_LIMIT test(s) (no fixed list supplied)"
+    head -n "$TEST_LIMIT" "$SELECTED_PATH.all" > "$SELECTED_PATH"
+  else
+    cp "$SELECTED_PATH.all" "$SELECTED_PATH"
+  fi
+  rm -f "$SELECTED_PATH.all"
+fi
+
+TOTAL_AVAILABLE=$(find .testmuai/tests -name '*_test.md' | wc -l | tr -d ' ')
+TOTAL_SELECTED=$(wc -l < "$SELECTED_PATH" | tr -d ' ')
+echo "run-all-tests: running $TOTAL_SELECTED of $TOTAL_AVAILABLE available test(s)"
 
 BEFORE_MARK=$(mktemp)
 touch "$BEFORE_MARK"
@@ -15,7 +44,13 @@ touch "$BEFORE_MARK"
 echo "[]" > "$SUMMARY_PATH"
 OVERALL_EXIT=0
 
-while IFS= read -r -d '' test_file; do
+while IFS= read -r test_file; do
+  [ -z "$test_file" ] && continue
+  if [ ! -f "$test_file" ]; then
+    echo "run-all-tests: WARN - $test_file no longer exists, skipping"
+    continue
+  fi
+
   echo "=================================================================="
   echo "run-all-tests: $test_file"
   echo "=================================================================="
@@ -60,7 +95,7 @@ PY
   if [ "$EXIT_CODE" -ne 0 ]; then
     OVERALL_EXIT=1
   fi
-done < <(find .testmuai/tests -name '*_test.md' -print0 | sort -z)
+done < "$SELECTED_PATH"
 
 # Stage every evidence pack produced since this script started.
 find "$HOME/.testmuai/kaneai/sessions" -name '*.evidence' -newer "$BEFORE_MARK" -print0 2>/dev/null \

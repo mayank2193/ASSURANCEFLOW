@@ -38,3 +38,17 @@ runs:
       run: |
         kane-cli login --username "${{ env.KANE_CLI_USERNAME }}" --access-key "${{ env.KANE_CLI_ACCESS_KEY }}"
         kane-cli whoami
+
+    - name: Select Test Manager project / folder
+      shell: bash
+      run: |
+        # Blank PROJECT_ID/FOLDER_ID = account default, same as a plain
+        # `kane-cli login` with no project/folder override.
+        if [ -n "${{ env.PROJECT_ID }}" ]; then
+          echo "Using project: ${{ env.PROJECT_ID }}"
+          kane-cli config project "${{ env.PROJECT_ID }}"
+        fi
+        if [ -n "${{ env.FOLDER_ID }}" ]; then
+          echo "Using folder: ${{ env.FOLDER_ID }}"
+          kane-cli config folder "${{ env.FOLDER_ID }}"
+        fi

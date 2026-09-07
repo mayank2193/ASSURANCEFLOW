@@ -91,8 +91,13 @@ All optional — leave blank for the defaults below:
 |---|---|---|
 | `pdf_path` | every `*.pdf` at the repo root | Ingest one specific PRD instead of (or in addition to, on a later run) the PDF already committed to the repo |
 | `max_tests` | no ceiling — kane-cli estimates the budget itself | Caps the number of scenario+test pairs `design tests` generates per use-case, via kane-cli's own `--max` flag |
+| `test_limit` | run every designed test | Caps how many tests stage 3 runs (first N, sorted) — the fix for stages 3/5 running long. Stage 5 reruns **that exact set**, not a fresh selection, so a passing/failing test stays the same test across both stages |
+| `project_id` | account default | kane-cli/LambdaTest Test Manager project ID (`kane-cli config project`) |
+| `folder_id` | account default | kane-cli/LambdaTest Test Manager folder ID within the project (`kane-cli config folder`) |
 | `reconcile_pdf` | skipped | Stage 5 only: reconciles the graph against an updated PRD version |
 | `lt_username` / `lt_access_key` | `LT_USERNAME` / `LT_ACCESS_KEY` secrets | Override credentials for this run only |
+
+**How `test_limit` ties stages 3 and 5 together:** stage 3 selects the first N test files (sorted, deterministic) and writes that list to `selected-tests.txt`, which travels in the `run-output` artifact. Stage 5 reads that same file and runs exactly those tests — it never re-selects. If the artifact is unavailable (see the re-run caveat below), it falls back to re-deriving the same first-N-sorted rule from `test_limit`, which reproduces the same set as long as the test suite itself hasn't changed.
 
 Triggers:
 - **Push to `main`** touching a PDF, `.testmuai/tests/**`, or the workflow itself → stages 1–4, 6
