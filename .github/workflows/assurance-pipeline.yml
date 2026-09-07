@@ -8,9 +8,10 @@ name: KaneAI Assurance Pipeline
 #   5. Maintain (regression)   -> kane-cli maintain reconcile + full re-run
 #   6. Evidence                -> kane-cli evidence merge / validate
 #
-# Required repo secrets (same credentials used for LambdaTest/LT_* elsewhere):
-#   LT_USERNAME   - TestmuAI / LambdaTest basic-auth username (Settings -> Keys)
-#   LT_ACCESS_KEY - TestmuAI / LambdaTest basic-auth access key
+# Credentials: defaults to the LT_USERNAME / LT_ACCESS_KEY repo secrets, but
+# a manual run (workflow_dispatch) can override either one explicitly - e.g.
+# to test against a different TestmuAI/LambdaTest account without touching
+# repo secrets.
 
 on:
   push:
@@ -29,11 +30,19 @@ on:
         description: "Path to an updated PRD PDF to reconcile against (stage 5, optional)"
         required: false
         type: string
+      lt_username:
+        description: "Override LT_USERNAME for this run (optional - defaults to the repo secret)"
+        required: false
+        type: string
+      lt_access_key:
+        description: "Override LT_ACCESS_KEY for this run (optional - defaults to the repo secret). Not masked by GitHub unless you leave it blank and use the secret instead."
+        required: false
+        type: string
 
 env:
   KANE_CLI_USER_AGENT: github-actions
-  KANE_CLI_USERNAME: ${{ secrets.LT_USERNAME }}
-  KANE_CLI_ACCESS_KEY: ${{ secrets.LT_ACCESS_KEY }}
+  KANE_CLI_USERNAME: ${{ inputs.lt_username || secrets.LT_USERNAME }}
+  KANE_CLI_ACCESS_KEY: ${{ inputs.lt_access_key || secrets.LT_ACCESS_KEY }}
 
 jobs:
   # ---------------------------------------------------------------------

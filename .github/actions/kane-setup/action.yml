@@ -18,6 +18,19 @@ runs:
       with:
         chrome-version: stable
 
+    - name: Mask credentials
+      shell: bash
+      run: |
+        # Repo-secret values are masked automatically; a value typed into a
+        # manual workflow_dispatch run is not, so mask it explicitly here
+        # before anything else touches it.
+        if [ -n "${{ env.KANE_CLI_USERNAME }}" ]; then
+          echo "::add-mask::${{ env.KANE_CLI_USERNAME }}"
+        fi
+        if [ -n "${{ env.KANE_CLI_ACCESS_KEY }}" ]; then
+          echo "::add-mask::${{ env.KANE_CLI_ACCESS_KEY }}"
+        fi
+
     - name: Authenticate kane-cli
       shell: bash
       env:

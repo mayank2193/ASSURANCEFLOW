@@ -76,16 +76,18 @@ Stage 3 is where the "author once, replay forever" model pays off: the first CI 
 
 ## Running it
 
-Requires two repo secrets (Settings → Secrets and variables → Actions) — reused from the existing LambdaTest credentials:
+Defaults to two repo secrets (Settings → Secrets and variables → Actions) — reused from the existing LambdaTest credentials:
 
 - `LT_USERNAME`
 - `LT_ACCESS_KEY`
+
+A manual run (**Actions → KaneAI Assurance Pipeline → Run workflow**) can override either one for that run only, via the `lt_username` / `lt_access_key` inputs — useful for testing against a different account without touching repo secrets. Leave both blank to fall back to the repo secrets. Both values are explicitly masked in the logs the moment the job starts, whichever source they came from.
 
 Triggers:
 - **Push to `main`** touching a PDF, `.testmuai/tests/**`, or the workflow itself → stages 1–4, 6
 - **Pull request** → stages 1–4, 6
 - **Nightly cron** (`0 3 * * *`) → stage 5 (regression) → 6
-- **Manual dispatch** → all stages; pass `reconcile_pdf` to reconcile against an updated PRD
+- **Manual dispatch** → all stages; optionally pass `reconcile_pdf` to reconcile against an updated PRD, and/or `lt_username` / `lt_access_key` to override credentials for the run
 
 ## Local usage
 
