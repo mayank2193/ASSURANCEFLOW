@@ -8,9 +8,9 @@ name: KaneAI Assurance Pipeline
 #   5. Maintain (regression)   -> kane-cli maintain reconcile + full re-run
 #   6. Evidence                -> kane-cli evidence merge / validate
 #
-# Required repo secrets:
-#   KANE_CLI_USERNAME   - TestmuAI basic-auth username (Settings -> Keys)
-#   KANE_CLI_ACCESS_KEY - TestmuAI basic-auth access key
+# Required repo secrets (same credentials used for LambdaTest/LT_* elsewhere):
+#   LT_USERNAME   - TestmuAI / LambdaTest basic-auth username (Settings -> Keys)
+#   LT_ACCESS_KEY - TestmuAI / LambdaTest basic-auth access key
 
 on:
   push:
@@ -32,8 +32,8 @@ on:
 
 env:
   KANE_CLI_USER_AGENT: github-actions
-  KANE_CLI_USERNAME: ${{ secrets.KANE_CLI_USERNAME }}
-  KANE_CLI_ACCESS_KEY: ${{ secrets.KANE_CLI_ACCESS_KEY }}
+  KANE_CLI_USERNAME: ${{ secrets.LT_USERNAME }}
+  KANE_CLI_ACCESS_KEY: ${{ secrets.LT_ACCESS_KEY }}
 
 jobs:
   # ---------------------------------------------------------------------
