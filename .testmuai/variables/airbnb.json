@@ -1,0 +1,19 @@
+{
+  "homepage_url": { "value": "https://www.airbnb.co.in", "secret": false },
+  "start_url": { "value": "https://www.airbnb.co.in", "secret": false },
+  "check_in_date": { "value": "15 December 2026", "secret": false },
+  "check_out_date": { "value": "20 December 2026", "secret": false },
+  "initial_check_in_date": { "value": "15 December 2026", "secret": false },
+  "initial_check_out_date": { "value": "20 December 2026", "secret": false },
+  "edited_check_in_date": { "value": "22 December 2026", "secret": false },
+  "edited_check_out_date": { "value": "27 December 2026", "secret": false },
+  "added_check_in_date": { "value": "15 December 2026", "secret": false },
+  "added_check_out_date": { "value": "20 December 2026", "secret": false },
+  "guest_count": { "value": "2 guests", "secret": false },
+  "guest_count_no_dates": { "value": "2 guests", "secret": false },
+  "initial_guest_count": { "value": "2 guests", "secret": false },
+  "edited_guest_count": { "value": "3 guests", "secret": false },
+  "filter_name": { "value": "Price range", "secret": false },
+  "filter_value": { "value": "Maximum price lower than default", "secret": false },
+  "map_refinement_target": { "value": "a nearby neighborhood visible on the map", "secret": false }
+}

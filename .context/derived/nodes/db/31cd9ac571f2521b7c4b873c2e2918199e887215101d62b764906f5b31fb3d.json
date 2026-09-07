@@ -1,0 +1,1 @@
+{"label":"ac","content":{"text":"The Homes results page exposes a Map control for refinement.","kind":"presence","risk":"med","derived":true,"expected_answer":{"operator":"exists","operand":"Map control on the Homes results page"}}}

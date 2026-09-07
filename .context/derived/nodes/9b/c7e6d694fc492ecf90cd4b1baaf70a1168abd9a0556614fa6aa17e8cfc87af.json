@@ -1,0 +1,1 @@
+{"label":"ac","content":{"text":"The results header shows the submitted check-in date after a complete-input homepage search.","kind":"presence","risk":"med","derived":true,"expected_answer":{"operator":"exists","operand":"submitted check-in date in the results header"}}}

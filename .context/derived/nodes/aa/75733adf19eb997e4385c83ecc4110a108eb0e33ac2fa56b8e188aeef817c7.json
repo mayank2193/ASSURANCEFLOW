@@ -1,0 +1,1 @@
+{"label":"ac","content":{"text":"Submitting a homepage search with a typed destination opens the Homes results page.","kind":"state-transition","risk":"med","derived":true,"expected_answer":{"operator":"equals","operand":"Homes results page","baseline":"airbnb.co.in homepage with a destination entered"}}}

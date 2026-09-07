@@ -1,0 +1,9 @@
+anchor: ac-21
+combinatorial:
+  reason: 'Techniques: state_flow for routed-results editing; eqp because destination, dates, and guests are equivalent editable parameter families named by the source. Risk-judged interaction strength = 2 because no money, auth, or data-loss promise applies. This is separate from initial routing because editability is a post-route behavior with its own oracle.'
+  strength: 2
+deferred_bindings: 0
+expected_how: 'expected_mode: authored'
+profile_family: unspecified
+surface_state: absent
+technique: 'Techniques: state_flow for routed-results editing; eqp because destination, dates, and guests are equivalent editable parameter families named by the source. Risk-judged interaction strength = 2 because no money, auth, or data-loss promise applies. This is separate from initial routing because editability is a post-route behavior with its own oracle.'

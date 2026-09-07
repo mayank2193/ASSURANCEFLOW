@@ -1,0 +1,9 @@
+anchor: ac-33
+combinatorial:
+  reason: '(degraded from 2: only 1 input(s))" for the single varying input edit_target. No budget ceiling supplied; this scenario was kept.'
+  strength: 1
+deferred_bindings: 0
+expected_how: 'expected_mode: authored'
+profile_family: unspecified
+surface_state: absent
+technique: 'Techniques: state_flow because the promise is an in-place results-page edit followed by refreshed results without homepage navigation; eqp because destination, dates, and guests are the three source-named editable parameter families with the same expected outcome. Risk-judged interaction strength = 2 because no money, auth, or data-loss promise applies; covering array degraded to straight enumeration per tool note "strength=1 (degraded from 2: only 1 input(s))" for the single varying input edit_target. No budget ceiling supplied; this scenario was kept.'

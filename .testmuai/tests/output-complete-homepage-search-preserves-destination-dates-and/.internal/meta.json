@@ -1,0 +1,18 @@
+{
+  "test_id": "3fd236ea-0508-4e91-b435-31ba3ae9eb66",
+  "project_id": "01KVAK4DFBAZVSYN9TEYWWY3WS",
+  "folder_id": "01KVAKBP5DX6RWQ323HH8MYY1X",
+  "org_id": "550422",
+  "session_name": "complete-homepage-search-preserves-destination-dates-and",
+  "commit_id": "d6aad0c6-2ffc-42b7-89e3-8bc1bd9725a6",
+  "testcase_id": "01M1XTT4T0CW6321XH9G1V3AS9",
+  "executions": [
+    {
+      "execution_id": "a529d2e6-13f2-45da-873f-695f29677452",
+      "run_kind": "author",
+      "status": "failed",
+      "valid": true,
+      "at": "2026-09-07T11:43:59.536Z"
+    }
+  ]
+}

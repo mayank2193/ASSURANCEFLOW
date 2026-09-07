@@ -1,0 +1,1 @@
+{"label":"ac","content":{"text":"After routing without dates, the results page allows dates to be added without returning to the homepage.","kind":"presence","risk":"med","derived":true,"expected_answer":{"operator":"exists","operand":"date-entry controls usable on the results page after a no-dates search without returning to the homepage"}}}

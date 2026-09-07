@@ -1,0 +1,1 @@
+{"label":"ac","content":{"text":"The results header allows direct editing of destination, dates, and guest parameters.","kind":"presence","risk":"med","derived":true,"expected_answer":{"operator":"forall","operand":"results-header controls for destination, dates, and guests accept parameter edits on the results page"}}}

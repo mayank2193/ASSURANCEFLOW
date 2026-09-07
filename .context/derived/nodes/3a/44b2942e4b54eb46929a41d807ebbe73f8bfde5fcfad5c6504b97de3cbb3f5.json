@@ -1,0 +1,1 @@
+{"label":"ac","content":{"text":"The homepage search fields use the labels Where, Check-in, Check-out, and Who.","kind":"presence","risk":"med","derived":true,"expected_answer":{"operator":"forall","operand":["Where","Check-in","Check-out","Who"]}}}

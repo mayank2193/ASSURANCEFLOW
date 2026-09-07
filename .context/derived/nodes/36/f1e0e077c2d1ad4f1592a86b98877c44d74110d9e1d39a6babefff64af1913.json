@@ -1,0 +1,1 @@
+{"label":"ac","content":{"text":"Using Tab on the homepage moves focus through Where, Check-in, Check-out, Who, and Search in that order.","kind":"absolute","risk":"med","derived":true,"expected_answer":{"operator":"equals","operand":"Where → Check-in → Check-out → Who → Search"}}}

@@ -1,0 +1,6 @@
+node_modules/
+*.log
+.DS_Store
+
+# Local-only kane-cli scratch (evidence packs land under ~/.testmuai, not here)
+.testmuai/evidence/*.tmp

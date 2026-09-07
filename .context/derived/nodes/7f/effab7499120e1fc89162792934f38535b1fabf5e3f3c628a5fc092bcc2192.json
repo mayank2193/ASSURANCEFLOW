@@ -1,0 +1,1 @@
+{"label":"ac","content":{"text":"Each search parameter applied to the current Homes results query is visible in the results header.","kind":"presence","risk":"med","derived":true,"expected_answer":{"operator":"forall","operand":"applied destination, date, and guest parameters are shown in the results header"}}}

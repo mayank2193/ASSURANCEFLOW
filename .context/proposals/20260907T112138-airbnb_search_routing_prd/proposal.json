@@ -1,0 +1,271 @@
+{
+  "version": 1,
+  "read_basis": "sha256:b4eaea396dae7e077d8ff6e979c2c16a1b28c9b701afdc2fd02741ec4ce01279",
+  "source": {
+    "source_id": "airbnb_search_routing_prd",
+    "source_cid": "sha256:f9055a5e92350fdb5e388f193098ebd258ee4041b13e4517cd1fd73a0bb8ee1a"
+  },
+  "use_cases": [
+    {
+      "temp_ref": "n1",
+      "title": "Search for homes from the homepage",
+      "description": "A guest starts on the airbnb.co.in homepage, enters a destination in the Where field, optionally supplies valid check-in and check-out dates plus guest counts, clicks Search, and lands on the Homes results page with the submitted parameters preserved; the flow explicitly supports both a complete search with destination, dates, and guests and a partial search with destination and guests only, so the guest can begin browsing even before choosing dates.",
+      "summary": "Start a Homes search from the homepage with inputs preserved.",
+      "actors": [
+        "guest"
+      ],
+      "value": "Gets the guest from homepage intent capture into browseable Homes results without losing search context.",
+      "risk": "med",
+      "cite": {
+        "anchor": "L10-L10",
+        "quote": "As a guest starting on the airbnb.co.in homepage,"
+      },
+      "cites": [
+        {
+          "anchor": "L10-L10",
+          "quote": "As a guest starting on the airbnb.co.in homepage,"
+        },
+        {
+          "anchor": "L11-L11",
+          "quote": "I want to enter a destination, optional dates, and guests, and land on a results page that reflects"
+        },
+        {
+          "anchor": "L18-L18",
+          "quote": "Route users successfully from the homepage search to the Homes results page with destination,"
+        },
+        {
+          "anchor": "L19-L19",
+          "quote": "dates, and guests preserved."
+        },
+        {
+          "anchor": "L45-L45",
+          "quote": "Flow 2: Partial Input: Search with destination and guests only (no dates). Results load for the"
+        }
+      ],
+      "criteria": [
+        {
+          "text": "Homepage search uses the fields Where, Check-in, Check-out, and Who.",
+          "cite": {
+            "anchor": "L39-L39",
+            "quote": "Displays fields for Where , Check-in , Check-out , and Who ."
+          }
+        },
+        {
+          "text": "Homepage search accepts typed destinations (city/region), optional dates, and guest counts.",
+          "cite": {
+            "anchor": "L40-L40",
+            "quote": "destinations (city/region), optional dates, and guest counts."
+          }
+        },
+        {
+          "text": "Clicking Search opens the Homes results page.",
+          "cite": {
+            "anchor": "L41-L41",
+            "quote": "On clicking Search, the Homes results page opens."
+          }
+        },
+        {
+          "text": "Applied parameters are visible in the results header.",
+          "cite": {
+            "anchor": "L42-L42",
+            "quote": "visible in the results header."
+          }
+        },
+        {
+          "text": "The complete-input flow supports destination plus valid check-in/check-out dates and guests.",
+          "cite": {
+            "anchor": "L44-L44",
+            "quote": "Flow 1: Complete Input: Search with destination, valid check-in/checkout dates, and guests."
+          }
+        },
+        {
+          "text": "The partial-input flow supports destination and guests without dates.",
+          "cite": {
+            "anchor": "L45-L45",
+            "quote": "Flow 2: Partial Input: Search with destination and guests only (no dates). Results load for the"
+          }
+        },
+        {
+          "text": "The homepage and results journey keeps the labels Where, Check-in, Check-out, and Who.",
+          "cite": {
+            "anchor": "L135-L135",
+            "quote": "Input Field Labels: Where , Check-in , Check-out , Who"
+          }
+        },
+        {
+          "text": "The call to action remains Search in the defined localization.",
+          "cite": {
+            "anchor": "L136-L137",
+            "quote": "Call to Action (CTA): Search\nLanguage: English-IN (en-IN) standard localization for all above labels."
+          }
+        }
+      ],
+      "depends_on_hint": []
+    },
+    {
+      "temp_ref": "n2",
+      "title": "Refine home search results",
+      "description": "A guest who has reached the Homes results page can continue narrowing the current search using the existing Filters and Map controls, with results updating after filter application and listings displayed on the map so the guest can refine by both property attributes and location without restarting the search.",
+      "summary": "Refine Homes results with filters and map.",
+      "actors": [
+        "guest"
+      ],
+      "value": "Helps the guest narrow broad search results into relevant options faster.",
+      "risk": "med",
+      "cite": {
+        "anchor": "L20-L20",
+        "quote": "Ensure the results page supports continuous refinement via Filters and Map controls."
+      },
+      "cites": [
+        {
+          "anchor": "L20-L20",
+          "quote": "Ensure the results page supports continuous refinement via Filters and Map controls."
+        },
+        {
+          "anchor": "L43-L43",
+          "quote": "Refinement Tools: The results page exposes existing Filters and Map controls."
+        },
+        {
+          "anchor": "L101-L101",
+          "quote": "I open Filters. I can refine using the standard"
+        },
+        {
+          "anchor": "L104-L105",
+          "quote": "I see updated results upon\napplying filters."
+        },
+        {
+          "anchor": "L111-L112",
+          "quote": "Listings display on the map for\nthe current search."
+        },
+        {
+          "anchor": "L113-L115",
+          "quote": "The map supports location-\nbased refinement (as\ndocumented)."
+        }
+      ],
+      "criteria": [
+        {
+          "text": "Results refinement uses the existing Filters and Map controls exposed on the results page.",
+          "cite": {
+            "anchor": "L43-L43",
+            "quote": "Refinement Tools: The results page exposes existing Filters and Map controls."
+          }
+        },
+        {
+          "text": "Guests can refine using the standard Airbnb filters documented in Help.",
+          "cite": {
+            "anchor": "L102-L103",
+            "quote": "Airbnb filters (as documented in\nHelp)."
+          }
+        },
+        {
+          "text": "Applying filters updates the results.",
+          "cite": {
+            "anchor": "L104-L105",
+            "quote": "I see updated results upon\napplying filters."
+          }
+        },
+        {
+          "text": "The map view displays listings for the current search.",
+          "cite": {
+            "anchor": "L111-L112",
+            "quote": "Listings display on the map for\nthe current search."
+          }
+        },
+        {
+          "text": "The map supports location-based refinement.",
+          "cite": {
+            "anchor": "L113-L115",
+            "quote": "The map supports location-\nbased refinement (as\ndocumented)."
+          }
+        },
+        {
+          "text": "This story does not introduce new filter types or reorder existing filters.",
+          "cite": {
+            "anchor": "L49-L49",
+            "quote": "Introduction of new filter types or the reordering of existing filters."
+          }
+        }
+      ],
+      "depends_on_hint": [
+        "n1"
+      ]
+    },
+    {
+      "temp_ref": "n3",
+      "title": "Edit a home search from the results page",
+      "description": "A guest on the Homes results page can see the current destination, dates, and guest parameters in the header, click into those controls to change them, refresh the results without returning to the homepage, and—when the search was started without dates—add dates directly on the results page later instead of restarting the journey.",
+      "summary": "Change search inputs directly from results.",
+      "actors": [
+        "guest"
+      ],
+      "value": "Lets the guest iterate on a search in place instead of backtracking to the homepage.",
+      "risk": "med",
+      "cite": {
+        "anchor": "L21-L21",
+        "quote": "Keep the entered inputs visible and editable directly on the results page to prevent users from having"
+      },
+      "cites": [
+        {
+          "anchor": "L21-L21",
+          "quote": "Keep the entered inputs visible and editable directly on the results page to prevent users from having"
+        },
+        {
+          "anchor": "L22-L22",
+          "quote": "to use the browser's \"back\" button to adjust their query."
+        },
+        {
+          "anchor": "L46-L46",
+          "quote": "destination, allowing the user to add dates directly on the results page later."
+        },
+        {
+          "anchor": "L125-L125",
+          "quote": "I can modify the parameters."
+        },
+        {
+          "anchor": "L126-L128",
+          "quote": "I can refresh the results without\nnavigating back to the\nhomepage."
+        }
+      ],
+      "criteria": [
+        {
+          "text": "Entered search inputs remain visible and editable directly on the results page so the guest does not need the browser back button to adjust the query.",
+          "cite": {
+            "anchor": "L21-L22",
+            "quote": "Keep the entered inputs visible and editable directly on the results page to prevent users from having\nto use the browser's \"back\" button to adjust their query."
+          }
+        },
+        {
+          "text": "Applied parameters are visible in the results header.",
+          "cite": {
+            "anchor": "L42-L42",
+            "quote": "visible in the results header."
+          }
+        },
+        {
+          "text": "From the results header, the guest can edit destination, dates, or guests.",
+          "cite": {
+            "anchor": "L121-L125",
+            "quote": "I click into the\ndestination, dates, or\nguests controls in the\nheader.\nI can modify the parameters."
+          }
+        },
+        {
+          "text": "After editing parameters on the results page, the guest can refresh results without navigating back to the homepage.",
+          "cite": {
+            "anchor": "L126-L128",
+            "quote": "I can refresh the results without\nnavigating back to the\nhomepage."
+          }
+        },
+        {
+          "text": "If the search started without dates, the guest can add dates later directly on the results page.",
+          "cite": {
+            "anchor": "L45-L46",
+            "quote": "Results load for the\ndestination, allowing the user to add dates directly on the results page later."
+          }
+        }
+      ],
+      "depends_on_hint": [
+        "n1"
+      ]
+    }
+  ]
+}

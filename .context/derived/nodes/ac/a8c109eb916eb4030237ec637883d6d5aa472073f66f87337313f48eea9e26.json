@@ -1,0 +1,1 @@
+{"label":"ac","content":{"text":"The Filters control shows a visible focus indicator when focused by keyboard.","kind":"presence","risk":"med","derived":true,"expected_answer":{"operator":"exists","operand":"visible focus indicator on the Filters control when focused by keyboard"}}}

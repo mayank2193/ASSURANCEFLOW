@@ -1,0 +1,1 @@
+{"label":"ac","content":{"text":"Applying filters on the Homes results page updates the displayed results.","kind":"state-transition","risk":"med","derived":true,"expected_answer":{"operator":"changed-by","operand":"results set updated after the selected filter is applied","baseline":"current Homes results before applying a filter"}}}

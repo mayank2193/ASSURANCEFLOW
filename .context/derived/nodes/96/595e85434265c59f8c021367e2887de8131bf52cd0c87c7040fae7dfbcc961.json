@@ -1,0 +1,1 @@
+{"label":"ac","content":{"text":"Map view displays listings for the current search.","kind":"presence","risk":"med","derived":true,"expected_answer":{"operator":"exists","operand":"listings for the current search are displayed on the map"}}}

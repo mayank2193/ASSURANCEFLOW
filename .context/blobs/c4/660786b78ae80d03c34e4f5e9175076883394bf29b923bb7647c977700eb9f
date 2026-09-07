@@ -1,0 +1,142 @@
+[page 1]
+Product Requirements Document
+1. Problem & Context
+Guests begin their journey on the airbnb.co.in homepage using the unified search bar (Where, dates,
+guests). We need consistent routing from the homepage directly to the results page with all user inputs
+preserved. Additionally, guests require immediate access to filters and the map so they can refine their
+search and make quick decisions. This aligns with documented Airbnb search behavior and refinement
+workflows.
+2. Core User Story
+As a guest starting on the airbnb.co.in homepage,
+I want to enter a destination, optional dates, and guests, and land on a results page that reflects
+those inputs,
+so I can refine my search using filters and a map to find a place that fits my trip.
+(Note: "Search results page" explicitly means the user typed a destination city in the 'Where' field on the
+homepage and clicked Search, regardless of whether dates were provided).
+3. Goals & Non-Goals
+Goals
+Route users successfully from the homepage search to the Homes results page with destination,
+dates, and guests preserved.
+Ensure the results page supports continuous refinement via Filters and Map controls.
+Keep the entered inputs visible and editable directly on the results page to prevent users from having
+to use the browser's "back" button to adjust their query.
+Non-Goals
+Changes to the checkout flow or pricing logic.
+Modifications to the underlying search ranking or recommendation algorithms.
+Mobile application (iOS/Android) feature parity (this initiative is strictly Web).
+Feature: Homepage Search to Homes Results Routing & Refinement
+Platform: Web Desktop / Mobile Web (airbnb.co.in)
+Target Audience: Guests searching for Homes
+•
+•
+•
+•
+•
+•
+[page 2]
+4. Scope Definitions
+In-Scope
+Homepage Search Bar: Displays fields for Where , Check-in , Check-out , and Who . Accepts typed
+destinations (city/region), optional dates, and guest counts.
+Routing & Display: On clicking Search, the Homes results page opens. Applied parameters must be
+visible in the results header.
+Refinement Tools: The results page exposes existing Filters and Map controls.
+Flow 1: Complete Input: Search with destination, valid check-in/checkout dates, and guests.
+Flow 2: Partial Input: Search with destination and guests only (no dates). Results load for the
+destination, allowing the user to add dates directly on the results page later.
+Localization (i18n): Maintain existing English (IN) labels visible on the homepage and results pages.
+Out-of-Scope
+Introduction of new filter types or the reordering of existing filters.
+Routing or results configuration for Experiences/Services (handled in separate stories).
+Any structural or visual changes to the global header navigation.
+5. Acceptance Criteria (QA Test Scenarios)
+The following Behavior-Driven Development (BDD) scenarios will guide QA test case creation and sign-
+off.
+Scenario Given When Then
+1. Route to
+results with
+dates
+I am on the airbnb.co.in
+homepage.
+I type a destination city
+(e.g., Hanoi) into Where .
+I select valid Check-in/
+Check-out dates and
+Guests.
+I click Search. The search results page opens
+for Homes.
+The destination, dates, and
+guests are preserved and
+shown at the top of the results.
+2. Route to
+results without
+dates
+I am on the airbnb.co.in
+homepage.
+I type a destination
+(e.g., Goa) and add
+Guests but skip dates.
+I click Search. The search results page opens
+for that destination with Guests
+preserved.
+I can add dates on the results
+page without returning to the
+homepage.
+•
+•
+•
+•
+•
+•
+•
+•
+•
+[page 3]
+Scenario Given When Then
+3. Filters
+available on
+results
+I land on the search
+results page.
+I open Filters. I can refine using the standard
+Airbnb filters (as documented in
+Help).
+I see updated results upon
+applying filters.
+4. Map
+available on
+results
+I am on the search
+results page.
+I open/use the Map view. Listings display on the map for
+the current search.
+The map supports location-
+based refinement (as
+documented).
+5. Inputs
+remain
+editable
+I am on the search
+results page.
+I click into the
+destination, dates, or
+guests controls in the
+header.
+I can modify the parameters.
+I can refresh the results without
+navigating back to the
+homepage.
+6. Accessibility (A11y) Requirements
+Keyboard Navigation (Homepage): The Where , Check-in , Check-out , Who fields, and the Search
+CTA must be focusable in a logical, sequential order using the Tab key.
+Keyboard Navigation (Results Page): The Filters and Map controls must be keyboard-accessible
+and clearly display a visible focus indicator state when navigated to.
+7. UX & Copy Guidelines
+Input Field Labels: Where , Check-in , Check-out , Who
+Call to Action (CTA): Search
+Language: English-IN (en-IN) standard localization for all above labels.
+•
+•
+•
+•
+•

@@ -1,0 +1,305 @@
+name: KaneAI Assurance Pipeline
+
+# Six-stage requirements-to-evidence pipeline for the Airbnb search/routing PRD:
+#   1. Ingest from PDF        -> kane-cli context ingest / extract
+#   2. Design test cases      -> kane-cli design tests
+#   3. Run (author & replay)  -> kane-cli testmd run
+#   4. Coverage                -> kane-cli cover gaps
+#   5. Maintain (regression)   -> kane-cli maintain reconcile + full re-run
+#   6. Evidence                -> kane-cli evidence merge / validate
+#
+# Required repo secrets:
+#   KANE_CLI_USERNAME   - TestmuAI basic-auth username (Settings -> Keys)
+#   KANE_CLI_ACCESS_KEY - TestmuAI basic-auth access key
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "**/*.pdf"
+      - ".testmuai/tests/**"
+      - ".github/workflows/assurance-pipeline.yml"
+  pull_request:
+    branches: [main]
+  schedule:
+    - cron: "0 3 * * *" # nightly regression (stage 5)
+  workflow_dispatch:
+    inputs:
+      reconcile_pdf:
+        description: "Path to an updated PRD PDF to reconcile against (stage 5, optional)"
+        required: false
+        type: string
+
+env:
+  KANE_CLI_USER_AGENT: github-actions
+  KANE_CLI_USERNAME: ${{ secrets.KANE_CLI_USERNAME }}
+  KANE_CLI_ACCESS_KEY: ${{ secrets.KANE_CLI_ACCESS_KEY }}
+
+jobs:
+  # ---------------------------------------------------------------------
+  # 1. Ingest requirements from the PDF into the .context/ assurance graph
+  # ---------------------------------------------------------------------
+  ingest-from-pdf:
+    name: "1. Ingest from PDF"
+    if: github.event_name != 'schedule'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/kane-setup
+
+      - name: Ingest every PDF requirements doc at the repo root
+        run: |
+          shopt -s nullglob
+          pdfs=(*.pdf)
+          if [ ${#pdfs[@]} -eq 0 ]; then
+            echo "::error::no PDF requirements found at repo root"
+            exit 1
+          fi
+          for f in "${pdfs[@]}"; do
+            kane-cli context ingest "$f" --mode ci
+          done
+
+      - name: Extract use-cases from ingested sources
+        run: kane-cli context extract --mode ci
+
+      - name: Approve derived use-cases (CI has no reviewer)
+        run: bash .github/scripts/approve-derived.sh
+
+      - name: List resulting use-case graph
+        run: kane-cli context list --type usecase
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: context-graph
+          path: .context/
+          retention-days: 14
+
+  # ---------------------------------------------------------------------
+  # 2. Design ACs, scenarios, and 1:1 tests for every committed use-case
+  # ---------------------------------------------------------------------
+  design-test-cases:
+    name: "2. Design test cases"
+    needs: ingest-from-pdf
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/kane-setup
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: context-graph
+          path: .context/
+
+      - name: Design assurance for every pending use-case
+        run: bash .github/scripts/design-pending-use-cases.sh
+
+      - name: List generated *_test.md files
+        run: find .testmuai/tests -name '*_test.md' | sort
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: design-output
+          path: |
+            .context/
+            .testmuai/tests/
+            coverage-after-design.json
+          retention-days: 14
+
+  # ---------------------------------------------------------------------
+  # 3. Run every designed test: author on first sight, replay afterwards
+  # ---------------------------------------------------------------------
+  run-author-and-replay:
+    name: "3. Run (author and replay)"
+    needs: design-test-cases
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/kane-setup
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: design-output
+
+      - name: Run all tests (author + replay)
+        id: run
+        run: bash .github/scripts/run-all-tests.sh run-summary.json
+
+      - name: Publish run summary
+        if: always()
+        run: |
+          python3 -c "
+          import json
+          rows = json.load(open('run-summary.json'))
+          print('| Test | Status | Report |')
+          print('|---|---|---|')
+          for r in rows:
+              link = f\"[open]({r['share_url']})\" if r['share_url'] else '-'
+              print(f\"| {r['test']} | {r['status']} | {link} |\")
+          " >> "$GITHUB_STEP_SUMMARY"
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: run-output
+          path: |
+            .context/
+            .testmuai/tests/
+            run-summary.json
+            evidence-packs/
+          retention-days: 14
+
+  # ---------------------------------------------------------------------
+  # 4. Coverage: designed x proven, from the live assurance graph
+  # ---------------------------------------------------------------------
+  coverage:
+    name: "4. Coverage"
+    needs: run-author-and-replay
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/kane-setup
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: run-output
+
+      - name: Compute dual-axis coverage
+        run: kane-cli cover gaps --mode ci --json | tee coverage-report.json
+
+      - name: Coverage summary + gate
+        run: |
+          python3 - <<'PY' >> "$GITHUB_STEP_SUMMARY"
+          import json, sys
+          d = json.loads(open("coverage-report.json").readlines()[0])
+          dc = d["design_completeness"]
+          print(f"## Coverage: {dc['pct']}% design-complete")
+          print(f"- ACs designed: {dc['acs_designed']}")
+          print(f"- Use-cases complete: {dc['usecases_complete']}")
+          print(f"- Use-cases still needing scenarios: {dc['ucs_needing_scenarios']}")
+          threshold = 70
+          if dc["pct"] < threshold:
+              print(f"\n**FAIL** — below the {threshold}% gate")
+              sys.exit(1)
+          PY
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: coverage-report
+          path: coverage-report.json
+          retention-days: 30
+
+  # ---------------------------------------------------------------------
+  # 5. Maintain: reconcile a changed PRD, then rerun the full regression
+  #    suite. Runs nightly (schedule) or on demand.
+  # ---------------------------------------------------------------------
+  maintain-rerun-regression:
+    name: "5. Maintain (rerun-regression)"
+    needs: coverage
+    if: always() && (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/kane-setup
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: run-output
+        continue-on-error: true
+
+      - name: Reconcile an updated PRD (optional, manual dispatch only)
+        if: ${{ github.event.inputs.reconcile_pdf != '' }}
+        run: |
+          SOURCE_ID=$(kane-cli context list --type source --json | python3 -c "import json,sys; print(json.loads(sys.stdin.readline())['id'])")
+          kane-cli maintain reconcile \
+            --from "${{ github.event.inputs.reconcile_pdf }}" \
+            --source-id "$SOURCE_ID" \
+            --mode ci \
+            --plan
+          echo "::notice::reconcile plan staged — review with 'kane-cli maintain reconcile --apply' locally, nothing auto-commits in CI"
+
+      - name: Rerun full regression suite
+        run: bash .github/scripts/run-all-tests.sh regression-summary.json
+
+      - name: Publish regression summary
+        if: always()
+        run: |
+          python3 -c "
+          import json
+          rows = json.load(open('regression-summary.json'))
+          print('| Test | Status | Report |')
+          print('|---|---|---|')
+          for r in rows:
+              link = f\"[open]({r['share_url']})\" if r['share_url'] else '-'
+              print(f\"| {r['test']} | {r['status']} | {link} |\")
+          " >> "$GITHUB_STEP_SUMMARY"
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: regression-output
+          path: |
+            .testmuai/tests/
+            regression-summary.json
+            evidence-packs/
+          retention-days: 30
+
+  # ---------------------------------------------------------------------
+  # 6. Evidence: merge + validate the packs from this run into one sealed,
+  #    auditable bundle.
+  # ---------------------------------------------------------------------
+  evidence:
+    name: "6. Evidence"
+    needs: [run-author-and-replay, maintain-rerun-regression]
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/kane-setup
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: run-output
+          path: run-output
+        continue-on-error: true
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: regression-output
+          path: regression-output
+        continue-on-error: true
+
+      - name: Merge evidence packs
+        run: |
+          mkdir -p .testmuai/evidence
+          mapfile -t PACKS < <(find run-output regression-output -name '*.evidence' 2>/dev/null | sort)
+          if [ ${#PACKS[@]} -eq 0 ]; then
+            echo "::warning::no evidence packs found to merge"
+            exit 0
+          fi
+          echo "Merging ${#PACKS[@]} evidence pack(s):"
+          printf ' - %s\n' "${PACKS[@]}"
+          kane-cli evidence merge "${PACKS[@]}" \
+            --run-id "gh-${{ github.run_id }}" \
+            --title "Airbnb assurance run ${{ github.run_id }}" \
+            --on-collision prefer-latest \
+            --json \
+            -o ".testmuai/evidence/gh-${{ github.run_id }}.evidence" \
+            | tee merge-report.json
+
+      - name: Validate the sealed pack
+        if: hashFiles('.testmuai/evidence/*.evidence') != ''
+        run: |
+          PACK=$(find .testmuai/evidence -name '*.evidence' | head -1)
+          kane-cli evidence validate "$PACK" --profile L1 --json | tee validation-report.json
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: assurance-evidence-pack
+          path: |
+            .testmuai/evidence/*.evidence
+            merge-report.json
+            validation-report.json
+          retention-days: 90

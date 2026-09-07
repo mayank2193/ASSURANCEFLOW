@@ -1,0 +1,27 @@
+name: "Set up kane-cli"
+description: "Installs kane-cli, Chrome, and authenticates against TestmuAI"
+
+runs:
+  using: "composite"
+  steps:
+    - uses: actions/setup-node@v4
+      with:
+        node-version: "20"
+
+    - name: Install kane-cli
+      shell: bash
+      run: npm install -g @testmuai/kane-cli
+
+    - name: Set up Chrome
+      id: setup-chrome
+      uses: browser-actions/setup-chrome@v1
+      with:
+        chrome-version: stable
+
+    - name: Authenticate kane-cli
+      shell: bash
+      env:
+        KANE_CLI_CHROME_PATH: ${{ steps.setup-chrome.outputs.chrome-path }}
+      run: |
+        kane-cli login --username "${{ env.KANE_CLI_USERNAME }}" --access-key "${{ env.KANE_CLI_ACCESS_KEY }}"
+        kane-cli whoami

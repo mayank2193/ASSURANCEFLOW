@@ -1,0 +1,1 @@
+{"label":"ac","content":{"text":"Keyboard focus can reach the Map control on the results page.","kind":"presence","risk":"med","derived":true,"expected_answer":{"operator":"exists","operand":"keyboard focus reaches the Map control on the results page"}}}
