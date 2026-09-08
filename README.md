@@ -53,12 +53,20 @@ flowchart LR
 
     subgraph S6["6 · Evidence"]
         direction TB
-        F1["evidence merge"] --> F2["evidence validate\n(L1 profile)"] --> F3["sealed .evidence\nbundle (90d artifact)"]
+        F1["validate every pack\n(L1)"] --> F2{"valid?"}
+        F2 -->|yes| F3["evidence merge"]
+        F2 -->|no| F4["excluded +\nreported, not fatal"]
+        F3 --> F5["sealed .evidence\nbundle (90d artifact)"]
+    end
+
+    subgraph S7["7 · Publish\n(GitHub Pages)"]
+        direction TB
+        G1["build static\nHTML report"] --> G2["deploy-pages"]
     end
 
     PDF --> S1 --> S2 --> S3 --> S4 --> S6
     S4 -.gate: pct < 70%.-> X["❌ fail pipeline"]
-    S3 --> S5 --> S6
+    S3 --> S5 --> S6 --> S7
 
     style X fill:#f66,color:#fff
 ```
@@ -72,7 +80,8 @@ Stage 3 is where the "author once, replay forever" model pays off: the first CI 
 3. **Run (author and replay)** — `kane-cli testmd run` over every `*_test.md`. Pass/fail, duration, and a Test Manager share URL land in the job summary; every evidence pack produced is staged for stage 6.
 4. **Coverage** — `kane-cli cover gaps` reports the dual-axis ribbon (% of ACs with a live, passing test vs. % of use-cases fully designed). The job fails the pipeline if completeness drops below 70%.
 5. **Maintain (rerun-regression)** — on a nightly cron or manual dispatch: optionally reconciles the graph against an updated PRD (`maintain reconcile`, which only *stages* a plan — nothing commits without a human review), then reruns the entire suite as a regression pass.
-6. **Evidence** — merges every evidence pack from stages 3 and 5 into one sealed pack (`kane-cli evidence merge`), validates it (`evidence validate --profile L1`), and uploads it as a 90-day CI artifact — the audit trail for "what did we actually prove, and when."
+6. **Evidence** — validates every evidence pack from stages 3 and 5 at L1 first (`kane-cli evidence validate`); a pack that never sealed cleanly (killed mid-run, lock timeout, …) is excluded and reported rather than aborting the whole merge (kane-cli's `evidence merge` otherwise refuses outright the moment *any* input pack fails `packs.require_valid=L1`). The valid packs are merged into one sealed bundle (`kane-cli evidence merge`), re-validated, and uploaded as a 90-day CI artifact, plus a static HTML report is built from the run/regression/coverage/merge results.
+7. **Publish evidence report (GitHub Pages)** — deploys that static report (`public/index.html`, with the merged `.evidence` pack alongside it for direct download) to GitHub Pages. The page also links out to LambdaTest's hosted evidence viewer pointed at the published pack, as a best-effort "open without downloading" option.
 
 ## Running it
 
@@ -82,6 +91,14 @@ Defaults to two repo secrets (Settings → Secrets and variables → Actions) �
 - `LT_ACCESS_KEY`
 
 A manual run (**Actions → KaneAI Assurance Pipeline → Run workflow**) can override either one for that run only, via the `lt_username` / `lt_access_key` inputs — useful for testing against a different account without touching repo secrets. Leave both blank to fall back to the repo secrets. Both values are explicitly masked in the logs the moment the job starts, whichever source they came from.
+
+### One-time setup: GitHub Pages
+
+Stage 7 publishes the evidence report via `actions/deploy-pages`, which needs Pages set to deploy from GitHub Actions:
+
+**Settings → Pages → Build and deployment → Source → GitHub Actions**
+
+Once that's set, every run (that reaches stage 7) publishes to `https://<owner>.github.io/<repo>/` — the environment URL also shows up on the run's summary page and in **Settings → Environments → github-pages**.
 
 ### Manual-run inputs
 
@@ -100,9 +117,9 @@ All optional — leave blank for the defaults below:
 **How `test_limit` ties stages 3 and 5 together:** stage 3 selects the first N test files (sorted, deterministic) and writes that list to `selected-tests.txt`, which travels in the `run-output` artifact. Stage 5 reads that same file and runs exactly those tests — it never re-selects. If the artifact is unavailable (see the re-run caveat below), it falls back to re-deriving the same first-N-sorted rule from `test_limit`, which reproduces the same set as long as the test suite itself hasn't changed.
 
 Triggers:
-- **Push to `main`** touching a PDF, `.testmuai/tests/**`, or the workflow itself → stages 1–4, 6
-- **Pull request** → stages 1–4, 6
-- **Nightly cron** (`0 3 * * *`) → stage 5 (regression) → 6
+- **Push to `main`** touching a PDF, `.testmuai/tests/**`, or the workflow itself → stages 1–4, 6–7
+- **Pull request** → stages 1–4, 6–7
+- **Nightly cron** (`0 3 * * *`) → stage 5 (regression) → 6–7
 - **Manual dispatch** → all stages, with the inputs above
 
 ### Re-running a single stage

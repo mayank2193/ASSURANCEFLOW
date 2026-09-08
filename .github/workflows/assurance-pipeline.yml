@@ -356,23 +356,17 @@ jobs:
           path: regression-output
         continue-on-error: true
 
-      - name: Merge evidence packs
+      - uses: actions/download-artifact@v4
+        with:
+          name: coverage-report
+        continue-on-error: true
+
+      - name: Merge evidence packs (only the ones that pass L1 validation)
         run: |
-          mkdir -p .testmuai/evidence
-          mapfile -t PACKS < <(find run-output regression-output -name '*.evidence' 2>/dev/null | sort)
-          if [ ${#PACKS[@]} -eq 0 ]; then
-            echo "::warning::no evidence packs found to merge"
-            exit 0
-          fi
-          echo "Merging ${#PACKS[@]} evidence pack(s):"
-          printf ' - %s\n' "${PACKS[@]}"
-          kane-cli evidence merge "${PACKS[@]}" \
-            --run-id "gh-${{ github.run_id }}" \
-            --title "Airbnb assurance run ${{ github.run_id }}" \
-            --on-collision prefer-latest \
-            --json \
-            -o ".testmuai/evidence/gh-${{ github.run_id }}.evidence" \
-            | tee merge-report.json
+          python3 .github/scripts/merge_evidence.py \
+            "gh-${{ github.run_id }}" \
+            ".testmuai/evidence/gh-${{ github.run_id }}.evidence" \
+            run-output regression-output
 
       - name: Validate the sealed pack
         if: hashFiles('.testmuai/evidence/*.evidence') != ''
@@ -387,5 +381,46 @@ jobs:
           path: |
             .testmuai/evidence/*.evidence
             merge-report.json
+            invalid-packs.json
             validation-report.json
           retention-days: 90
+
+      - name: Build the static evidence report
+        if: always()
+        run: |
+          python3 .github/scripts/build-evidence-report.py \
+            --out public \
+            --run-output run-output \
+            --regression-output regression-output \
+            --coverage-report coverage-report.json \
+            --merge-report merge-report.json \
+            --invalid-packs invalid-packs.json \
+            --validation-report validation-report.json \
+            --evidence-glob '.testmuai/evidence/*.evidence' \
+            --pages-base-url "https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}" \
+            --run-id "${{ github.run_id }}" \
+            --run-url "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+
+      - uses: actions/upload-pages-artifact@v3
+        if: always()
+        with:
+          path: public/
+
+  # ---------------------------------------------------------------------
+  # 7. Publish the evidence report to GitHub Pages
+  # ---------------------------------------------------------------------
+  publish-evidence-pages:
+    name: "7. Publish evidence report (GitHub Pages)"
+    needs: evidence
+    if: always()
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
